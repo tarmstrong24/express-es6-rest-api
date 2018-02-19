@@ -3,10 +3,11 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import bodyParser from 'body-parser';
-import initializeDb from './db';
 import middleware from './middleware';
-import api from './api';
-import config from './config.json';
+import api from './routers';
+import config from './config';
+import connectToDb from './db/db';
+import serverless from 'serverless-http';
 
 let app = express();
 app.server = http.createServer(app);
@@ -23,18 +24,17 @@ app.use(bodyParser.json({
 	limit : config.bodyLimit
 }));
 
-// connect to db
-initializeDb( db => {
+connectToDb(config);
 
-	// internal middleware
-	app.use(middleware({ config, db }));
+// internal middleware
+app.use(middleware({ config }));
 
-	// api router
-	app.use('/api', api({ config, db }));
+// api router
+app.use('/api', api({ config }));
 
-	app.server.listen(process.env.PORT || config.port, () => {
-		console.log(`Started on port ${app.server.address().port}`);
-	});
+app.server.listen(process.env.PORT || config.port, () => {
+	console.log(`Started on port ${app.server.address().port}`);
 });
 
+//exports.handler = serverless(app);
 export default app;
